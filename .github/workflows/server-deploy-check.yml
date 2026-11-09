@@ -1,0 +1,54 @@
+name: Verify server one-click deployment
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      MAILU_INSTALL_DIR: ${{ runner.temp }}/mailu-server
+      MAILU_BIND: 127.0.0.1
+      MAILU_PORT: 3341
+      COMPOSE_PROJECT_NAME: mailu-public-deploy-check
+    steps:
+      - name: Download public installer and deploy anonymously
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/iceqi/mail-union-downloads/main/server/deploy.sh -o "$RUNNER_TEMP/deploy.sh"
+          sh "$RUNNER_TEMP/deploy.sh"
+      - name: Verify login, restart and update persistence
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, hashlib, subprocess, json, urllib.request
+          root=pathlib.Path(os.environ['MAILU_INSTALL_DIR'])
+          config=root/'.env'
+          values=dict(line.split('=',1) for line in config.read_text().splitlines() if line and not line.startswith('#'))
+          assert config.stat().st_mode&0o777==0o600
+          assert len(values['MAILU_ADMIN_PASSWORD'])==48
+          def check():
+              base='http://127.0.0.1:3341'
+              with urllib.request.urlopen(base+'/health',timeout=10) as r: assert json.load(r)['ok']
+              req=urllib.request.Request(base+'/api/auth/login',data=json.dumps({'username':values['MAILU_ADMIN_USERNAME'],'password':values['MAILU_ADMIN_PASSWORD']}).encode(),headers={'content-type':'application/json'})
+              with urllib.request.urlopen(req,timeout=10) as r: assert json.load(r)['token']
+          def key():
+              container=subprocess.check_output(['docker','compose','ps','-q','server'],cwd=root,text=True).strip()
+              return subprocess.check_output(['docker','exec',container,'sha256sum','/app/data/mailhub-server.sqlite.key'],text=True).split()[0]
+          check()
+          before_env=hashlib.sha256(config.read_bytes()).hexdigest()
+          before_key=key()
+          subprocess.run(['docker','compose','restart','server'],cwd=root,check=True)
+          subprocess.run(['sh',str(pathlib.Path(os.environ['RUNNER_TEMP'])/'deploy.sh')],check=True)
+          check()
+          assert key()==before_key
+          assert hashlib.sha256(config.read_bytes()).hexdigest()==before_env
+          print('Anonymous deployment, health, administrator login, restart and update persistence: passed')
+          PY
+      - name: Remove test containers and test volume
+        if: always()
+        run: |
+          if [ -f "$MAILU_INSTALL_DIR/compose.yaml" ]; then
+            cd "$MAILU_INSTALL_DIR"
+            docker compose down -v
+          fi
