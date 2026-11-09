@@ -1,0 +1,20 @@
+name: mailunion-client
+services:
+  client:
+    image: ghcr.io/iceqi/mail-union-client:latest
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${MAILU_BIND:-127.0.0.1}:${MAILU_PORT:-3210}:3210"
+    volumes:
+      - client-data:/app/data
+    environment:
+      MAILU_SERVER_URL: ${MAILU_SERVER_URL:-http://host.docker.internal:3100}
+      MAILU_COOKIE_SECURE: ${MAILU_COOKIE_SECURE:-false}
+      TZ: Asia/Shanghai
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+volumes:
+  client-data:
