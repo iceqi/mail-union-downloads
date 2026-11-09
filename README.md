@@ -14,7 +14,7 @@ MailUnion，简称 MailU。这里提供 Windows、macOS 安装包与 Docker 部�
 
 下载后可使用同版本的 `SHA256SUMS.txt` 校验文件。
 
-## Docker 部署
+## Docker 客户端部署
 
 安装 Docker 与 Docker Compose 插件后：
 
@@ -41,3 +41,22 @@ sh deploy.sh
 docker compose pull
 docker compose up -d
 ```
+
+## 服务端一键部署
+
+安装并启动 Docker（含 Compose v2）后执行：
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/iceqi/mail-union-downloads/main/server/deploy.sh | sh
+```
+
+脚本默认在当前目录创建 `mailu-server/`，拉取成品镜像、生成随机管理员初始密码、启动并等待健康检查。默认监听 `0.0.0.0:3100`，完成后访问 `http://服务器IP:3100`。管理员用户名与初始密码位于部署目录的 `.env`，登录后绑定 2FA。
+
+指定目录和端口：
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/iceqi/mail-union-downloads/main/server/deploy.sh -o /tmp/mailu-server-deploy.sh
+MAILU_INSTALL_DIR=/opt/mailu-server MAILU_PORT=3100 sh /tmp/mailu-server-deploy.sh
+```
+
+已有 `.env` 会保留；配置修改请编辑该文件。公网使用 HTTPS 反向代理；API/WebSocket 与管理端共用 3100 端口。部署细节、升级和备份见 [服务端部署说明](server/README.md)。

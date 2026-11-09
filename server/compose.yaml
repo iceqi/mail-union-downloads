@@ -1,0 +1,18 @@
+name: mailunion-server
+services:
+  server:
+    image: ${MAILU_SERVER_IMAGE:-ghcr.io/iceqi/mail-union-server:latest}
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${MAILU_BIND:-0.0.0.0}:${MAILU_PORT:-3100}:3100"
+    volumes:
+      - server-data:/app/data
+    environment:
+      TZ: Asia/Shanghai
+      MAILHUB_ADMIN_USERNAME: ${MAILU_ADMIN_USERNAME:?Run deploy.sh to initialize administrator}
+      MAILHUB_ADMIN_PASSWORD: ${MAILU_ADMIN_PASSWORD:?Run deploy.sh to initialize administrator}
+    security_opt:
+      - no-new-privileges:true
+volumes:
+  server-data:
