@@ -8,9 +8,9 @@ MailUnion，简称 MailU。这里提供 Windows、macOS 安装包与 Docker 部�
 
 | 系统 | 安装包 |
 | --- | --- |
-| Windows x64 | `MailU_0.1.0_x64-setup.exe`，或 `.msi` |
-| Apple Silicon Mac | `MailU_0.1.0_aarch64.dmg` |
-| Intel Mac | `MailU_0.1.0_x64.dmg` |
+| Windows x64 | `MailU_<版本>_x64-setup.exe`，或 `.msi` |
+| Apple Silicon Mac | `MailU_<版本>_aarch64.dmg` |
+| Intel Mac | `MailU_<版本>_x64.dmg` |
 
 下载后可使用同版本的 `SHA256SUMS.txt` 校验文件。
 
@@ -25,7 +25,7 @@ cp .env.example .env
 sh deploy.sh
 ```
 
-打开 http://127.0.0.1:3210，填写服务端地址、AK（Client Key）与 SK（Client Secret）登录。Docker 与桌面版使用相同界面，关闭网页不会停止后台任务。
+打开 http://127.0.0.1:3210，填写服务端地址、AK（Client Key）与 SK（Client Secret）登录。Docker 与桌面版使用相同界面。侧栏底部的“退出登录”返回配对页，可重新填写服务端地址、AK 与 SK，已有邮箱数据保留。Docker 关闭或退出网页不会停止后台任务；重新配对成功后，后台切换到新连接。
 
 镜像：`ghcr.io/iceqi/mail-union-client:latest`，支持 Linux amd64 与 arm64；无需下载源码或本地编译。
 
