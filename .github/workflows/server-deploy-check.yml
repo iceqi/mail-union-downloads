@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      MAILU_INSTALL_DIR: ${{ runner.temp }}/mailu-server
+      MAILU_INSTALL_DIR: /tmp/mailu-server-public-check
       MAILU_BIND: 127.0.0.1
       MAILU_PORT: 3341
       COMPOSE_PROJECT_NAME: mailu-public-deploy-check
