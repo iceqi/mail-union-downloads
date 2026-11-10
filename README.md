@@ -50,7 +50,7 @@ docker compose up -d
 curl -fsSL https://raw.githubusercontent.com/iceqi/mail-union-downloads/main/server/deploy.sh | sh
 ```
 
-脚本默认在当前目录创建 `mailu-server/`，拉取成品镜像、生成随机管理员初始密码、启动并等待健康检查。默认监听 `0.0.0.0:3100`，完成后访问 `http://服务器IP:3100`。管理员用户名与初始密码位于部署目录的 `.env`，登录后绑定 2FA。
+脚本默认在当前目录创建 `mailu-server/`，拉取成品镜像、生成随机管理员初始密码、启动并等待健康检查。默认业务监听 `0.0.0.0:3100`，管理后台监听 `0.0.0.0:3101`，完成后访问 `http://服务器IP:3101`。管理员用户名与初始密码位于部署目录的 `.env`，登录后绑定 2FA。
 
 指定目录和端口：
 
@@ -59,4 +59,4 @@ curl -fsSL https://raw.githubusercontent.com/iceqi/mail-union-downloads/main/ser
 MAILU_INSTALL_DIR=/opt/mailu-server MAILU_PORT=3100 sh /tmp/mailu-server-deploy.sh
 ```
 
-已有 `.env` 会保留；配置修改请编辑该文件。公网使用 HTTPS 反向代理；API/WebSocket 与管理端共用 3100 端口。部署细节、升级和备份见 [服务端部署说明](server/README.md)。
+已有 `.env` 会保留；配置修改请编辑该文件。公网使用 HTTPS 反向代理；客户端连接和邮件 API 使用业务端口 3100，管理后台使用独立端口 3101；反向代理分别配置业务域名和管理域名。部署细节、升级和备份见 [服务端部署说明](server/README.md)。

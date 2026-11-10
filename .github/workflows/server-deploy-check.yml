@@ -1,6 +1,12 @@
 name: Verify server one-click deployment
 on:
   workflow_dispatch:
+    inputs:
+      image:
+        description: Server image to verify
+        default: ghcr.io/iceqi/mail-union-server:latest
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
@@ -8,9 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
+      MAILU_SERVER_IMAGE: ${{ inputs.image }}
       MAILU_INSTALL_DIR: /tmp/mailu-server-public-check
       MAILU_BIND: 127.0.0.1
       MAILU_PORT: 3341
+      MAILU_ADMIN_BIND: 127.0.0.1
+      MAILU_ADMIN_PORT: 3342
       COMPOSE_PROJECT_NAME: mailu-public-deploy-check
     steps:
       - name: Download public installer and deploy anonymously
@@ -30,8 +39,16 @@ jobs:
           def check():
               base='http://127.0.0.1:3341'
               with urllib.request.urlopen(base+'/health',timeout=10) as r: assert json.load(r)['ok']
-              req=urllib.request.Request(base+'/api/auth/login',data=json.dumps({'username':values['MAILU_ADMIN_USERNAME'],'password':values['MAILU_ADMIN_PASSWORD']}).encode(),headers={'content-type':'application/json'})
-              with urllib.request.urlopen(req,timeout=10) as r: assert json.load(r)['token']
+              admin='http://127.0.0.1:3342'
+              with urllib.request.urlopen(admin+'/health',timeout=10) as r: assert json.load(r)['listener']=='admin'
+              req=urllib.request.Request(admin+'/api/auth/login',data=json.dumps({'username':values['MAILU_ADMIN_USERNAME'],'password':values['MAILU_ADMIN_PASSWORD']}).encode(),headers={'content-type':'application/json'})
+              with urllib.request.urlopen(req,timeout=10) as r: token=json.load(r)['token']
+              req=urllib.request.Request(admin+'/api/ai/rules',headers={'authorization':'Bearer '+token})
+              with urllib.request.urlopen(req,timeout=10) as r: assert isinstance(json.load(r)['items'],list)
+              for path in ['/api/auth/bootstrap/status','/api/ai/rules']:
+                  try: urllib.request.urlopen(base+path,timeout=10)
+                  except urllib.error.HTTPError as error: assert error.code==404
+                  else: raise AssertionError('Management API exposed on business port')
           def key():
               container=subprocess.check_output(['docker','compose','ps','-q','server'],cwd=root,text=True).strip()
               return subprocess.check_output(['docker','exec',container,'sha256sum','/app/data/mailhub-server.sqlite.key'],text=True).split()[0]
@@ -43,7 +60,7 @@ jobs:
           check()
           assert key()==before_key
           assert hashlib.sha256(config.read_bytes()).hexdigest()==before_env
-          print('Anonymous deployment, health, administrator login, restart and update persistence: passed')
+          print('Anonymous deployment, two-port isolation, rule library, administrator login, restart and update persistence: passed')
           PY
       - name: Remove test containers and test volume
         if: always()

@@ -6,11 +6,11 @@
 curl -fsSL https://raw.githubusercontent.com/iceqi/mail-union-downloads/main/server/deploy.sh | sh
 ```
 
-默认目录 `./mailu-server`，端口 `3100`，直接使用 `ghcr.io/iceqi/mail-union-server:latest` 的 amd64/arm64 成品镜像，无需源码、Node.js 或编译工具。
+默认目录 `./mailu-server`，业务端口 `3100`、管理端口 `3101`，直接使用 `ghcr.io/iceqi/mail-union-server:latest` 的 amd64/arm64 成品镜像，无需源码、Node.js 或编译工具。
 
 ## 登录
 
-访问 `http://服务器IP:3100`。查看部署目录 `.env` 中的 `MAILU_ADMIN_USERNAME` 和 `MAILU_ADMIN_PASSWORD`；首次部署会生成随机密码，文件权限为600。登录后绑定 Google Authenticator 等兼容 TOTP 的2FA。
+访问管理后台 `http://服务器IP:3101`。查看部署目录 `.env` 中的 `MAILU_ADMIN_USERNAME` 和 `MAILU_ADMIN_PASSWORD`；首次部署会生成随机密码，文件权限为600。登录后绑定 Google Authenticator 等兼容 TOTP 的2FA。
 
 管理员在创建容器时初始化，避免对外开放一个未创建管理员的实例。环境变量仅初始化空数据库，修改 `.env` 不会重置已有账号密码。
 
@@ -18,7 +18,7 @@ curl -fsSL https://raw.githubusercontent.com/iceqi/mail-union-downloads/main/ser
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/iceqi/mail-union-downloads/main/server/deploy.sh -o /tmp/mailu-server-deploy.sh
-MAILU_INSTALL_DIR=/opt/mailu-server MAILU_BIND=127.0.0.1 MAILU_PORT=3100 sh /tmp/mailu-server-deploy.sh
+MAILU_INSTALL_DIR=/opt/mailu-server MAILU_BIND=127.0.0.1 MAILU_PORT=3100 MAILU_ADMIN_BIND=127.0.0.1 MAILU_ADMIN_PORT=3101 sh /tmp/mailu-server-deploy.sh
 ```
 
 这些变量仅在首次生成 `.env` 时使用；以后编辑 `.env` 后运行 `docker compose up -d`。默认 `MAILU_BIND=0.0.0.0` 便于远程部署；公网建议配置 HTTPS 反向代理或限制3100端口访问。
@@ -49,3 +49,22 @@ docker compose start server
 ```
 
 迁移时将整个备份恢复到新实例的数据卷，并保留管理员信息。不要用 `docker compose down -v` 更新，它会删除全部数据。`.env` 含初始密码，应妥善保存。
+
+
+## 管理与业务端口
+
+| 入口 | 默认端口 | 用途 |
+| --- | --- | --- |
+| 业务服务 | 3100 | 客户端连接、邮件 API、积分查询及配置同步 |
+| 管理后台 | 3101 | 页面、管理员登录、客户端管理、AI 设置、充值和管理事件 |
+
+两端口共用数据库和在线客户端状态；业务端口不提供管理页面或管理 API，管理端口不接受客户端连接或邮件调用。`/health` 在两个端口分别检查对应监听。
+
+Compose 使用 `MAILU_PORT`、`MAILU_ADMIN_PORT` 分别配置宿主机端口，`MAILU_BIND`、`MAILU_ADMIN_BIND` 分别配置绑定地址。直接运行 Node 时对应 `PORT`、`ADMIN_PORT`、`HOST`、`ADMIN_HOST`，两个端口必须不同。
+
+已有部署升级时保留 `.env` 和数据卷；更新 compose.yaml 后增加 3101 映射，未设置管理变量时采用默认值。现有客户端仍连接原来的业务地址。反向代理应分别设置业务域名和管理域名，例如 `api.example.com → 3100`、`admin.example.com → 3101`；不要把两个端口的 `/api` 混合转发。管理端强制下发的客户端连接地址应填写业务域名。
+
+管理后台右上角支持“修改密码”：验证当前密码，新密码 12 至 256 位；修改后该账号所有会话失效，使用新密码重新登录，两步验证绑定保留。
+
+
+版本变化和旧部署迁移步骤见 [服务端更新记录](CHANGELOG.md)。

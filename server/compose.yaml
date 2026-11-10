@@ -6,6 +6,7 @@ services:
     init: true
     ports:
       - "${MAILU_BIND:-0.0.0.0}:${MAILU_PORT:-3100}:3100"
+      - "${MAILU_ADMIN_BIND:-0.0.0.0}:${MAILU_ADMIN_PORT:-3101}:3101"
     volumes:
       - server-data:/app/data
     environment:

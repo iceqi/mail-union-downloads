@@ -19,8 +19,8 @@ fetch "$base_url/compose.yaml" "$stage/compose.yaml"
 if [ ! -f .env ]; then
   admin_password=$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')
   test ${#admin_password} -eq 48
-  printf 'MAILU_BIND=%s\nMAILU_PORT=%s\nMAILU_SERVER_IMAGE=%s\nMAILU_ADMIN_USERNAME=admin\nMAILU_ADMIN_PASSWORD=%s\n' \
-    "${MAILU_BIND:-0.0.0.0}" "${MAILU_PORT:-3100}" "${MAILU_SERVER_IMAGE:-ghcr.io/iceqi/mail-union-server:latest}" "$admin_password" > "$stage/env"
+  printf 'MAILU_BIND=%s\nMAILU_PORT=%s\nMAILU_ADMIN_BIND=%s\nMAILU_ADMIN_PORT=%s\nMAILU_SERVER_IMAGE=%s\nMAILU_ADMIN_USERNAME=admin\nMAILU_ADMIN_PASSWORD=%s\n' \
+    "${MAILU_BIND:-0.0.0.0}" "${MAILU_PORT:-3100}" "${MAILU_ADMIN_BIND:-0.0.0.0}" "${MAILU_ADMIN_PORT:-3101}" "${MAILU_SERVER_IMAGE:-ghcr.io/iceqi/mail-union-server:latest}" "$admin_password" > "$stage/env"
   mv "$stage/env" .env
 fi
 chmod 600 .env
@@ -48,5 +48,8 @@ while [ "$tries" -lt 60 ]; do
 done
 [ "$tries" -lt 60 ] || { echo '等待健康检查超时，请执行 docker compose ps 和 docker compose logs --tail=100 server。' >&2; exit 1; }
 printf '\nMailU 服务端已启动且健康检查通过。\n部署目录：%s\n' "$PWD"
+printf '业务服务（客户端连接及邮件 API）：\n'
 docker compose port server 3100
-printf '使用以上端口访问 http://服务器IP:端口。管理员账号及随机初始密码保存在部署目录的 .env 中，请登录后绑定 2FA。\n更新：再次执行同一条安装命令，或在部署目录运行 docker compose pull && docker compose up -d。\n'
+printf '管理后台：\n'
+docker compose port server 3101
+printf '使用管理端口访问 http://服务器IP:管理端口。客户端及 API 使用业务端口。管理员账号及随机初始密码保存在部署目录的 .env 中，请登录后绑定 2FA。\n更新：再次执行同一条安装命令，或在部署目录运行 docker compose pull && docker compose up -d。\n'
