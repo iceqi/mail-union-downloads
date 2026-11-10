@@ -12,7 +12,7 @@ MailUnion，简称 MailU。这里提供 Windows、macOS 安装包与 Docker 部�
 | Apple Silicon Mac | `MailU_<版本>_aarch64.dmg` |
 | Intel Mac | `MailU_<版本>_x64.dmg` |
 
-下载后可使用同版本的 `SHA256SUMS.txt` 校验文件。
+下载后可使用同版本的 `SHA256SUMS*.txt` 校验文件。
 
 ## Docker 客户端部署
 
@@ -33,7 +33,7 @@ sh deploy.sh
 - `MAILU_BIND=0.0.0.0` 可开放网卡监听，需自行限制访问范围。
 - 容器内访问宿主机服务或代理，使用 `host.docker.internal`，而非 `127.0.0.1`。
 - 邮箱与配置保存在 `client-data` 数据卷；升级时保留该卷。`docker compose down -v` 会删除数据。
-- 同一 Client Key 使用一个常驻客户端，避免桌面版和 Docker 版同时连接。
+- 同一 Client Key（AK）只允许一个常驻客户端在线；新端登录会让旧端下线并停止自动重连。Windows、Mac 和 Docker 同样适用；多台客户端同时运行请分别创建不同的 AK。
 
 ## 升级
 
