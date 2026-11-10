@@ -1,5 +1,15 @@
 # MailU 服务端更新记录
 
+## v0.1.5（2026-11-10）
+
+- 创建客户端和续期时可选长期有效、1 周、1 个月、1 年或自定义日期时间。已有客户端默认长期有效。
+- 到期后服务端停止接受该客户端的请求，并断开在线连接。搭配 MailU 客户端 v0.1.4 可在仪表盘查看到期时间，到期时自动返回登录页。
+- 业务端口的 `/docs/` 提供公开 API 文档；管理端的验证码解析规则库设有独立入口和规则详情。
+
+已有部署在原目录执行 `docker compose pull && docker compose up -d`，保留 `.env` 和数据卷。建议先升级服务端，再安装 [MailU 客户端 v0.1.4](https://github.com/iceqi/mail-union-downloads/releases/tag/v0.1.4)。
+
+固定版本镜像：`ghcr.io/iceqi/mail-union-server:v0.1.5`；一键部署默认使用 `latest`。查看 [一键部署验证](https://github.com/iceqi/mail-union-downloads/actions/runs/42804371614)。
+
 ## v0.1.4（2026-11-10）
 
 - AI 同次返回验证码、中文规则名称和可复用提取规则，经原邮件校验后按实际发件人保存；规则经两个不同验证码样本确认后自动启用。
